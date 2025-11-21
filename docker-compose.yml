@@ -149,6 +149,7 @@ services:
   flink-jobmanager:
     image: flink:1.19-scala_2.12
     container_name: yahoo_flink_jobmanager
+    profiles: ["manual"]   
     command: jobmanager
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
@@ -160,6 +161,7 @@ services:
   flink-taskmanager:
     image: flink:1.19-scala_2.12
     container_name: yahoo_flink_taskmanager
+    profiles: ["manual"]   
     command: taskmanager
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
@@ -170,18 +172,93 @@ services:
 
   flink-reprocessor:
     build: ./FlinkReprocessor
+    profiles: ["manual"]   
     container_name: flink_reprocessor
     depends_on:
       - kafka
     networks:
       - yahoo_network
+# ---------------------------
+  # HADOOP: NameNode / DataNode
+  # ---------------------------
+  hadoop-namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop_namenode
+    environment:
+      - CLUSTER_NAME=yahoo_hadoop
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:9000
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - dataset_volume:/data   # compartir volumen con Postgres export
+    ports:
+      - "9000:9000"
+      - "9870:9870"   # NameNode UI
+    networks:
+      - yahoo_network
+    healthcheck:
+      test: ["CMD-SHELL", "hdfs dfs -ls / >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
 
+  hadoop-datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop_datanode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:9000
+      - HDFS_CONF_dfs_replication=1
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    depends_on:
+      - hadoop-namenode
+    networks:
+      - yahoo_network
+
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop_resourcemanager
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:9000
+    depends_on:
+      - hadoop-namenode
+    ports:
+      - "8088:8088"   # YARN UI
+    networks:
+      - yahoo_network
+
+  nodemanager:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: hadoop_nodemanager
+    depends_on:
+      - resourcemanager
+      - hadoop-datanode
+    networks:
+      - yahoo_network
+
+  # ---------------------------
+  # Pig runner (contiene Apache Pig)
+  # ---------------------------
+  pig:
+    build: ./Pig
+    container_name: yahoo_pig
+    volumes:
+      - ./pig-scripts:/pig-scripts
+      - dataset_volume:/data
+      - ./scripts:/scripts
+    depends_on:
+      - hadoop-namenode
+      - hadoop-datanode
+    networks:
+      - yahoo_network
+    tty: true
 volumes:
   dataset_volume:
     driver: local
   database_volume:
     driver: local
-
+  hadoop_namenode:
+  hadoop_datanode:
 networks:
   yahoo_network:
     driver: bridge

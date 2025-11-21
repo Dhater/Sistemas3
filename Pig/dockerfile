@@ -1,0 +1,22 @@
+FROM eclipse-temurin:8-jdk
+
+ARG PIG_VERSION=0.17.0
+ENV PIG_HOME=/opt/pig
+ENV PATH=$PATH:$PIG_HOME/bin
+
+RUN apt-get update && apt-get install -y \
+        wget \
+        python3 \
+        python3-pip \
+        netcat-openbsd \
+        curl && \
+    mkdir -p /opt && \
+    cd /opt && \
+    wget https://downloads.apache.org/pig/pig-0.17.0/pig-0.17.0.tar.gz && \
+    tar -xzf pig-0.17.0.tar.gz && mv pig-0.17.0 pig && rm pig-0.17.0.tar.gz
+
+RUN apt-get install -y procps iputils-ping
+
+WORKDIR /pig-scripts
+
+CMD ["/bin/bash"]
