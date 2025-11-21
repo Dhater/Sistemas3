@@ -35,7 +35,7 @@ DB_CONFIG = {
 }
 
 # --- LLM helper ---
-def call_llm(prompt: str, api_key: str, model="minimax/minimax-m2:free"):
+def call_llm(prompt: str, api_key: str, model="openai/gpt-oss-20b:free"):
     try:
         client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=api_key)
         completion = client.chat.completions.create(
