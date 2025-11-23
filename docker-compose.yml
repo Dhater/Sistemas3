@@ -25,9 +25,9 @@ services:
       start_period: 30s
 
   descarga-dataset:
+    profiles: ["manual"]
     build: ./Descarga_Dataset
     container_name: yahoo_descarga_dataset
-    profiles: ["manual"]
     volumes:
       - dataset_volume:/data
       - ./local_data:/data
@@ -41,6 +41,7 @@ services:
         condition: service_healthy
 
   cache:
+    profiles: ["manual"]
     image: redis:7-alpine
     container_name: yahoo_cache
     command: redis-server --maxmemory 52428800 --maxmemory-policy allkeys-lru
@@ -56,9 +57,9 @@ services:
       start_period: 10s
 
   cache-manager:
+    profiles: ["manual"]
     build: ./Cache
     container_name: yahoo_cache_manager
-    profiles: ["manual"]
     environment:
       - REDIS_HOST=cache
     depends_on:
@@ -68,9 +69,9 @@ services:
       - yahoo_network
 
   pruebas:
+    profiles: ["manual"]
     build: ./LLM_Client
     container_name: Contestador_Base
-    profiles: ["manual"]
     volumes:
       - ./LLM_Client:/app
       - ./local_data:/data
@@ -80,6 +81,7 @@ services:
       - yahoo_network
 
   generador-trafico:
+    profiles: ["manual"]
     build: ./Generador_Trafico
     container_name: yahoo_generador_trafico
     volumes:
@@ -96,6 +98,7 @@ services:
       - yahoo_network
 
   llm-client:
+    profiles: ["manual"]
     build:
       context: ./prueba
     container_name: API_CLIENT
@@ -116,6 +119,7 @@ services:
       - yahoo_network
 
   zookeeper:
+    profiles: ["manual"]
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: yahoo_zookeeper
     environment:
@@ -127,6 +131,7 @@ services:
       - yahoo_network
 
   kafka:
+    profiles: ["manual"]
     image: confluentinc/cp-kafka:7.5.0
     container_name: yahoo_kafka
     depends_on:
@@ -145,11 +150,10 @@ services:
       - ./kafka-init.sh:/usr/local/bin/kafka-init.sh
     command: ["/bin/bash", "-c", "(/usr/local/bin/kafka-init.sh &) && /etc/confluent/docker/run"]
 
-
   flink-jobmanager:
+    profiles: ["manual"]
     image: flink:1.19-scala_2.12
     container_name: yahoo_flink_jobmanager
-    profiles: ["manual"]   
     command: jobmanager
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
@@ -159,9 +163,9 @@ services:
       - yahoo_network
 
   flink-taskmanager:
+    profiles: ["manual"]
     image: flink:1.19-scala_2.12
     container_name: yahoo_flink_taskmanager
-    profiles: ["manual"]   
     command: taskmanager
     environment:
       - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
@@ -171,42 +175,42 @@ services:
       - yahoo_network
 
   flink-reprocessor:
+    profiles: ["manual"]
     build: ./FlinkReprocessor
-    profiles: ["manual"]   
     container_name: flink_reprocessor
     depends_on:
       - kafka
     networks:
       - yahoo_network
-# ---------------------------
-  # HADOOP: NameNode / DataNode
+
   # ---------------------------
+  # HADOOP (necesarios)
+  # ---------------------------
+
+
   hadoop-namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: hadoop_namenode
     environment:
       - CLUSTER_NAME=yahoo_hadoop
       - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:9000
+      - HDFS_CONF_dfs_namenode_name_dir=file:///hadoop/dfs/name
     volumes:
       - hadoop_namenode:/hadoop/dfs/name
-      - dataset_volume:/data   # compartir volumen con Postgres export
+      - dataset_volume:/data
+      - /pig-scripts:/pig-scripts
     ports:
       - "9000:9000"
-      - "9870:9870"   # NameNode UI
+      - "9870:9870"
     networks:
       - yahoo_network
-    healthcheck:
-      test: ["CMD-SHELL", "hdfs dfs -ls / >/dev/null 2>&1 || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
-      start_period: 30s
 
   hadoop-datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     container_name: hadoop_datanode
     environment:
       - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:9000
+      - HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
       - HDFS_CONF_dfs_replication=1
     volumes:
       - hadoop_datanode:/hadoop/dfs/data
@@ -215,50 +219,81 @@ services:
     networks:
       - yahoo_network
 
-  resourcemanager:
+  hadoop-resourcemanager:
     image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
     container_name: hadoop_resourcemanager
     environment:
       - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:9000
+      - YARN_CONF_yarn_resourcemanager_hostname=hadoop-resourcemanager
+      - YARN_CONF_yarn_resourcemanager_address=hadoop-resourcemanager:8032
+      - YARN_CONF_yarn_resourcemanager_scheduler_address=hadoop-resourcemanager:8030
+      - YARN_CONF_yarn_resourcemanager_resource_tracker_address=hadoop-resourcemanager:8031
+      - YARN_CONF_yarn_log_server_url=http://hadoop-resourcemanager:19888/jobhistory/logs
+    ports:
+      - "8088:8088"
     depends_on:
       - hadoop-namenode
-    ports:
-      - "8088:8088"   # YARN UI
     networks:
       - yahoo_network
 
-  nodemanager:
+  hadoop-nodemanager:
     image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
     container_name: hadoop_nodemanager
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://hadoop-namenode:9000
+      - YARN_CONF_yarn_resourcemanager_hostname=hadoop-resourcemanager
+      - YARN_CONF_yarn_nodemanager_aux-services=mapreduce_shuffle
+      - YARN_CONF_yarn_nodemanager_resource_memory_mb=4096
+      - YARN_CONF_yarn_nodemanager_vmem_check_enabled=false
     depends_on:
-      - resourcemanager
+      - hadoop-resourcemanager
       - hadoop-datanode
     networks:
       - yahoo_network
-
   # ---------------------------
-  # Pig runner (contiene Apache Pig)
+  # Pig runner
   # ---------------------------
   pig:
-    build: ./Pig
-    container_name: yahoo_pig
+    build:
+      context: ./Pig
+    container_name: hadoop-pig
     volumes:
-      - ./pig-scripts:/pig-scripts
-      - dataset_volume:/data
-      - ./scripts:/scripts
+      - ./local_data:/app/data       # tus datos de entrada
+      - ./pig-scripts:/app/scripts   # scripts Pig
+      - ./pig_output:/output         # output de Pig visible en tu máquina
+
+    networks:
+      - yahoo_network
     depends_on:
       - hadoop-namenode
       - hadoop-datanode
+      - hadoop-resourcemanager
+      - hadoop-nodemanager
+
+
+  pipeline:
+    build:
+      context: ./Pipeline
+    container_name: yahoo_pipeline
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    volumes:
+      - ./Pipeline:/pipeline         # ← montar todo el código del pipeline
+      - ./local_data:/data          # ← salida CSV, resultados Pig, etc.
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - yahoo_network
-    tty: true
+    entrypoint: ["/bin/bash", "-c", "tail -f /dev/null"]
+
+
 volumes:
   dataset_volume:
-    driver: local
   database_volume:
-    driver: local
   hadoop_namenode:
   hadoop_datanode:
+
 networks:
   yahoo_network:
     driver: bridge
