@@ -1,0 +1,100 @@
+{
+  "yahoo": {
+    "total_words": 892431,
+    "unique_words": 91907,
+    "lexical_diversity": 0.103,
+    "top_words": [
+      {
+        "word": "can",
+        "count": 8881
+      },
+      {
+        "word": "will",
+        "count": 7755
+      },
+      {
+        "word": "one",
+        "count": 5419
+      },
+      {
+        "word": "get",
+        "count": 5165
+      },
+      {
+        "word": "like",
+        "count": 5161
+      },
+      {
+        "word": "just",
+        "count": 5083
+      },
+      {
+        "word": "dont",
+        "count": 4780
+      },
+      {
+        "word": "people",
+        "count": 4108
+      },
+      {
+        "word": "good",
+        "count": 3540
+      },
+      {
+        "word": "know",
+        "count": 3479
+      }
+    ]
+  },
+  "llm": {
+    "total_words": 3902065,
+    "unique_words": 171964,
+    "lexical_diversity": 0.0441,
+    "top_words": [
+      {
+        "word": "like",
+        "count": 63579
+      },
+      {
+        "word": "can",
+        "count": 32945
+      },
+      {
+        "word": "youre",
+        "count": 19529
+      },
+      {
+        "word": "often",
+        "count": 14301
+      },
+      {
+        "word": "use",
+        "count": 13732
+      },
+      {
+        "word": "might",
+        "count": 13656
+      },
+      {
+        "word": "free",
+        "count": 11900
+      },
+      {
+        "word": "without",
+        "count": 10581
+      },
+      {
+        "word": "one",
+        "count": 8603
+      },
+      {
+        "word": "via",
+        "count": 8298
+      }
+    ]
+  },
+  "common_words": 36525,
+  "yahoo_exclusive": 55382,
+  "llm_exclusive": 135439,
+  "vocabulary_overlap_percent": 16.07
+}

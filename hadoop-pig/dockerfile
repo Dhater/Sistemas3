@@ -1,0 +1,16 @@
+FROM bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+
+# Instalar dependencias
+RUN apt-get update && \
+    apt-get install -y wget tar curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Descargar y descomprimir Pig
+RUN wget https://downloads.apache.org/pig/pig-0.17.0/pig-0.17.0.tar.gz -O /tmp/pig.tar.gz && \
+    tar -xzf /tmp/pig.tar.gz -C /opt && \
+    mv /opt/pig-0.17.0 /opt/pig && \
+    rm /tmp/pig.tar.gz
+
+# Configurar variables de entorno
+ENV PIG_HOME=/opt/pig
+ENV PATH=$PATH:/opt/pig/bin

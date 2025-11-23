@@ -33,6 +33,43 @@ DB_CONFIG = {
     "user": os.getenv("DB_USER", "postgres"),
     "password": os.getenv("DB_PASSWORD", "password123")
 }
+# --- Crear CSV si no existe ---
+import pandas as pd
+
+CSV_PATH = "/data/base_preguntas.csv"   # ./local_data/base_preguntas.csv en tu máquina
+
+def ensure_csv_exists():
+    if os.path.exists(CSV_PATH):
+        logger.info("📁 CSV encontrado, no es necesario crearlo.")
+        return
+
+    logger.warning("⚠ CSV no encontrado, generando desde la base de datos...")
+    print("Creando el csv") 
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+
+        # Solo filas con respuestas humanas y LLM válidas
+        query = """
+            SELECT id, question_text, human_answer, llm_answer
+            FROM questions
+            WHERE 
+                human_answer IS NOT NULL
+                AND human_answer <> ''
+                AND llm_answer IS NOT NULL
+                AND llm_answer <> ''
+            ORDER BY id
+        """
+
+        df = pd.read_sql(query, conn)
+
+        df.to_csv(CSV_PATH, index=False, encoding="utf-8")
+        logger.info(f"✅ CSV generado correctamente en {CSV_PATH} ({len(df)} filas)")
+        
+    except Exception as e:
+        logger.error(f"❌ Error generando CSV: {e}")
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 # --- LLM helper ---
 def call_llm(prompt: str, api_key: str, model="openai/gpt-oss-20b:free"):
@@ -87,6 +124,11 @@ def save_response_json(data: dict, filename="responses.json"):
         logger.info(f"✅ Guardada respuesta success id={data['question_id']}")
     except Exception as e:
         logger.warning(f"No se pudo guardar JSON: {e}")
+
+
+@app.on_event("startup")
+def startup_event():
+    ensure_csv_exists()
 
 # --- Endpoint HTTP ---
 @app.post("/evaluate")
