@@ -1,23 +1,23 @@
-# 🧠 Plataforma de Análisis de Preguntas y Respuestas
 
-**Universidad Diego Portales — Sistemas Distribuidos, Entrega 2**  
-**Integrantes:** Leandro Norambuena, Gonzalo Gaete  
-**Profesor:** Nicolás Hidalgo  
-**Fecha:** 30 de octubre de 2025
+# 🧠 Análisis Lingüístico Offline con Hadoop y Pig
+
+**Universidad Diego Portales — Sistemas Distribuidos, Entrega 3**
+**Integrantes:** Leandro Norambuena, Gonzalo Gaete
+**Profesor:** Nicolás Hidalgo
+**Fecha:** 23 de noviembre de 2025
 
 ---
 
 ## 📘 Descripción del Proyecto
 
-Este proyecto implementa un **pipeline distribuido** para la evaluación de preguntas y respuestas en línea, integrando **FastAPI**, **Kafka** y un **modelo de lenguaje (LLM)** para la generación automática de respuestas.
+Este proyecto realiza un **análisis lingüístico distribuido** de datos textuales utilizando **Hadoop HDFS** y **Pig** para procesamiento offline.
+El objetivo es **limpiar, tokenizar y analizar** los datos, generando estadísticas y visualizaciones como **top 20 palabras más frecuentes** y **wordclouds**.
 
-El objetivo principal es **comparar respuestas humanas con las generadas por el modelo**, evaluando su calidad mediante métricas cuantitativas como:
+El análisis permite:
 
-- Similitud  
-- Completitud  
-- Calidad general
-
-La plataforma está diseñada para ser **modular, escalable y tolerante a fallos**, utilizando **contenedores Docker** para desplegar los distintos componentes y **APIs RESTful** para la comunicación entre ellos.
+* Identificar patrones de frecuencia de palabras.
+* Visualizar información relevante de los textos procesados.
+* Evaluar el efecto de la filtración de palabras ignoradas en el análisis.
 
 ---
 
@@ -25,88 +25,76 @@ La plataforma está diseñada para ser **modular, escalable y tolerante a fallos
 
 ### Componentes Principales
 
-1. **Generador de Tráfico**  
-   - Produce datos con distribución configurable.  
-   - Envía mensajes al tópico `preguntas` en Kafka.  
-   - Recibe respuestas desde los tópicos `respuestas_exitosas` y `respuestas_fallidas`.
+1. **Hadoop HDFS**
 
-2. **Pipeline de Mensajería (Kafka + Zookeeper)**  
-   - Gestiona la **ingestión y transporte de datos** entre componentes.  
-   - Garantiza **entrega confiable y persistente** de mensajes.
+   * Almacena los datos de manera distribuida.
+   * Permite procesamiento escalable y tolerante a fallos.
 
-3. **Procesamiento Distribuido (Flink)**  
-   - Reprocesa respuestas fallidas, incrementando el contador de reintentos.  
-   - Reenvía mensajes al tópico `preguntas` para nueva evaluación.
+2. **Pig Scripts**
 
-4. **API (FastAPI)**  
-   - Consume mensajes del tópico `preguntas`.  
-   - Genera respuestas y las publica en `respuestas_exitosas` o `respuestas_fallidas`.
+   * Limpieza de datos crudos.
+   * Tokenización y cálculo de frecuencias.
+   * Generación de archivos intermedios para análisis.
 
-5. **Almacenamiento (PostgreSQL / Redis)**  
-   - Guarda preguntas, respuestas y métricas.  
-   - Redis se considera opcional para cachear resultados.
+3. **Python Scripts**
+
+   * Preprocesamiento y post-procesamiento opcional.
+   * Generación de resultados finales y visualizaciones.
+
+4. **Visualizaciones**
+
+   * Gráficos de frecuencia (Top 20).
+   * Wordclouds para cada dataset analizado.
 
 ---
 
 ## 🔄 Flujo de Datos
 
-1. El **generador de tráfico** produce y envía datos a Kafka.  
-2. **Kafka** distribuye los mensajes a los consumidores correspondientes.  
-3. **FastAPI** procesa las preguntas y publica los resultados.  
-4. **Flink** reprocesa mensajes fallidos y los reenvía.  
-5. Los resultados se almacenan en **PostgreSQL** (y opcionalmente en Redis).
+1. Los datos se colocan en la carpeta `data/` y se suben a HDFS.
+2. Se ejecutan los scripts Pig para limpieza, tokenización y conteo de palabras.
+3. Se generan archivos intermedios con resultados de frecuencia.
+4. **Una vez finalizado el procesamiento**, se ejecuta el análisis final con:
+
+```bash
+python analyze_wordcount.py
+```
+
+5. El script Python genera:
+
+   * Top 20 palabras más frecuentes.
+   * Visualizaciones tipo wordcloud.
+   * Archivos listos para anexar al informe LaTeX.
+
+**Importante:** El análisis final **solo debe ejecutarse después de que todos los pasos previos estén completos**, ya que depende de los archivos generados por Pig.
 
 ---
 
 ## ⚙ Tecnologías Utilizadas
 
-| Tecnología     | Rol en el Proyecto |
-|----------------|------------------|
-| Python         | Lógica general y scripts de backend |
-| FastAPI        | API REST asíncrona |
-| Kafka / Zookeeper | Mensajería distribuida |
-| Flink          | Procesamiento paralelo de datos |
-| PostgreSQL     | Persistencia de resultados |
-| Redis          | Cacheo de respuestas (opcional) |
-| Docker         | Contenerización y despliegue modular |
+| Tecnología        | Rol en el Proyecto                      |
+| ----------------- | --------------------------------------- |
+| Hadoop HDFS       | Almacenamiento distribuido              |
+| Pig               | Procesamiento y transformación de datos |
+| Python            | Análisis final y visualización          |
+| Docker (opcional) | Despliegue aislado y reproducible       |
 
 ---
 
-## 📈 Escalabilidad y Paralelización
+## 📈 Resultados
 
-- **Kafka** permite múltiples productores y consumidores concurrentes.  
-- **Flink** maneja reprocesamientos en paralelo sin bloquear la API.  
-- El sistema es **horizontalmente escalable y tolerante a fallos**.
+Los resultados se guardan en la carpeta `output/`, incluyendo:
 
----
+* `top20_yahoo.png` / `top20_yahoo_simple.png`
+* `top20_llm.png` / `top20_llm_simple.png`
+* `wordcloud_yahoo.png`
+* `wordcloud_llm.png`
 
-## 🧩 Diseño Modular
-
-Cada módulo puede ejecutarse de forma independiente, lo que permite:
-
-- Desarrollo y pruebas aisladas.  
-- Escalado horizontal según la carga.  
-- Reutilización en otros proyectos.  
-
-Gracias a **Docker**, cada componente se ejecuta en su contenedor, facilitando el despliegue y las pruebas controladas.
+> Las versiones "incluyendo palabras ignoradas" muestran cómo funciona la filtración de stopwords.
 
 ---
 
 ## 📚 Referencias
 
-- [Kafka Documentation](https://kafka.apache.org/documentation/)  
-- [Flink Documentation](https://nightlies.apache.org/flink/flink-docs-stable/)  
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)  
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)  
-- [Redis Documentation](https://redis.io/documentation)
-
----
-
-## 🚀 Ejecución
-
-```bash
-# Levantar el entorno completo
-docker-compose up --build
-
-# Detener los contenedores
-docker-compose down
+* [Hadoop Documentation](https://hadoop.apache.org/docs/)
+* [Pig Documentation](https://pig.apache.org/docs/r0.17.0/)
+* [Python Documentation](https://docs.python.org/3/)
