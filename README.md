@@ -1,16 +1,18 @@
+Claro, aquí tienes tu Markdown actualizado para que sea **copiable** y deje claro que antes hay que ejecutar el bash que sube los datos a HDFS y genera CSV y TXT:
 
+````markdown
 # 🧠 Análisis Lingüístico Offline con Hadoop y Pig
 
-**Universidad Diego Portales — Sistemas Distribuidos, Entrega 3**
-**Integrantes:** Leandro Norambuena, Gonzalo Gaete
-**Profesor:** Nicolás Hidalgo
+**Universidad Diego Portales — Sistemas Distribuidos, Entrega 3**  
+**Integrantes:** Leandro Norambuena, Gonzalo Gaete  
+**Profesor:** Nicolás Hidalgo  
 **Fecha:** 23 de noviembre de 2025
 
 ---
 
 ## 📘 Descripción del Proyecto
 
-Este proyecto realiza un **análisis lingüístico distribuido** de datos textuales utilizando **Hadoop HDFS** y **Pig** para procesamiento offline.
+Este proyecto realiza un **análisis lingüístico distribuido** de datos textuales utilizando **Hadoop HDFS** y **Pig** para procesamiento offline.  
 El objetivo es **limpiar, tokenizar y analizar** los datos, generando estadísticas y visualizaciones como **top 20 palabras más frecuentes** y **wordclouds**.
 
 El análisis permite:
@@ -50,22 +52,28 @@ El análisis permite:
 
 ## 🔄 Flujo de Datos
 
-1. Los datos se colocan en la carpeta `data/` y se suben a HDFS.
-2. Se ejecutan los scripts Pig para limpieza, tokenización y conteo de palabras.
-3. Se generan archivos intermedios con resultados de frecuencia.
-4. **Una vez finalizado el procesamiento**, se ejecuta el análisis final con:
+1. Antes de ejecutar el análisis, **asegúrate de subir los datos y stopwords a HDFS**, generando los CSV y TXT necesarios. Ejecuta:
+
+```bash
+./setup_hdfs.sh
+````
+
+2. Los datos se colocan en la carpeta `data/` y se suben a HDFS.
+3. Se ejecutan los scripts Pig para limpieza, tokenización y conteo de palabras.
+4. Se generan archivos intermedios con resultados de frecuencia.
+5. **Una vez finalizado el procesamiento**, se ejecuta el análisis final con:
 
 ```bash
 python analyze_wordcount.py
 ```
 
-5. El script Python genera:
+6. El script Python genera:
 
    * Top 20 palabras más frecuentes.
    * Visualizaciones tipo wordcloud.
    * Archivos listos para anexar al informe LaTeX.
 
-**Importante:** El análisis final **solo debe ejecutarse después de que todos los pasos previos estén completos**, ya que depende de los archivos generados por Pig.
+**Importante:** El análisis final **solo debe ejecutarse después de que todos los pasos previos estén completos**, ya que depende de los archivos generados por Pig y los CSV/TXT exportados a HDFS.
 
 ---
 
@@ -98,3 +106,10 @@ Los resultados se guardan en la carpeta `output/`, incluyendo:
 * [Hadoop Documentation](https://hadoop.apache.org/docs/)
 * [Pig Documentation](https://pig.apache.org/docs/r0.17.0/)
 * [Python Documentation](https://docs.python.org/3/)
+
+```
+
+Con esto queda **clarísimo que primero hay que ejecutar el bash que sube CSV y TXT a HDFS** antes de correr el `analyze_wordcount.py`.  
+
+Si quieres, puedo también agregar un **mini-diagrama de flujo** ASCII del pipeline para que quede más visual. ¿Quieres que haga eso?
+```
