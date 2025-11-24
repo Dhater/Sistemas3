@@ -47,6 +47,7 @@ El análisis permite:
    * Wordclouds para cada dataset analizado.
 
 ---
+
 ## 🔄 Flujo de Datos
 
 1. Antes de ejecutar el análisis final, se exportan los datos y se generan los CSV/TXT necesarios usando el pipeline dentro del contenedor:
@@ -65,18 +66,9 @@ python analyze_wordcount.py
 
    * Top 20 palabras más frecuentes.
    * Visualizaciones tipo wordcloud.
-
-**Importante:** El análisis final **solo debe ejecutarse después de que el pipeline haya terminado**, ya que depende de los CSV y TXT generados.
-
-```
-
-6. El script Python genera:
-
-   * Top 20 palabras más frecuentes.
-   * Visualizaciones tipo wordcloud.
    * Archivos listos para anexar al informe LaTeX.
 
-**Importante:** El análisis final **solo debe ejecutarse después de que todos los pasos previos estén completos**, ya que depende de los archivos generados por Pig y los CSV/TXT exportados a HDFS.
+**Importante:** El análisis final **solo debe ejecutarse después de que el pipeline haya terminado**, ya que depende de los CSV y TXT generados.
 
 ---
 
@@ -110,9 +102,4 @@ Los resultados se guardan en la carpeta `output/`, incluyendo:
 * [Pig Documentation](https://pig.apache.org/docs/r0.17.0/)
 * [Python Documentation](https://docs.python.org/3/)
 
-```
-
-Con esto queda **clarísimo que primero hay que ejecutar el bash que sube CSV y TXT a HDFS** antes de correr el `analyze_wordcount.py`.  
-
-Si quieres, puedo también agregar un **mini-diagrama de flujo** ASCII del pipeline para que quede más visual. ¿Quieres que haga eso?
 ```
