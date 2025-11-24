@@ -1,4 +1,4 @@
-````markdown
+markdown
 # 🧠 Análisis Lingüístico Offline con Hadoop y Pig
 
 **Universidad Diego Portales — Sistemas Distribuidos, Entrega 3**  
