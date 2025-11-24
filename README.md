@@ -1,5 +1,3 @@
-Claro, aquí tienes tu Markdown actualizado para que sea **copiable** y deje claro que antes hay que ejecutar el bash que sube los datos a HDFS y genera CSV y TXT:
-
 ````markdown
 # 🧠 Análisis Lingüístico Offline con Hadoop y Pig
 
@@ -49,22 +47,27 @@ El análisis permite:
    * Wordclouds para cada dataset analizado.
 
 ---
-
 ## 🔄 Flujo de Datos
 
-1. Antes de ejecutar el análisis, **asegúrate de subir los datos y stopwords a HDFS**, generando los CSV y TXT necesarios. Ejecuta:
+1. Antes de ejecutar el análisis final, se exportan los datos y se generan los CSV/TXT necesarios usando el pipeline dentro del contenedor:
 
 ```bash
-./setup_hdfs.sh
+docker exec -it yahoo_pipeline python /pipeline/pipeline.py
 ````
 
-2. Los datos se colocan en la carpeta `data/` y se suben a HDFS.
-3. Se ejecutan los scripts Pig para limpieza, tokenización y conteo de palabras.
-4. Se generan archivos intermedios con resultados de frecuencia.
-5. **Una vez finalizado el procesamiento**, se ejecuta el análisis final con:
+2. Una vez que los datos están listos y los archivos generados por el pipeline están disponibles, se ejecuta el análisis final:
 
 ```bash
 python analyze_wordcount.py
+```
+
+3. El script Python genera:
+
+   * Top 20 palabras más frecuentes.
+   * Visualizaciones tipo wordcloud.
+
+**Importante:** El análisis final **solo debe ejecutarse después de que el pipeline haya terminado**, ya que depende de los CSV y TXT generados.
+
 ```
 
 6. El script Python genera:
